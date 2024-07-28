@@ -1,100 +1,63 @@
-import React from "react";
-import QuizDetails from "../components/QuizDetails";
-import Result from "../components/Result";
+import axios from "axios";
+import { useState } from "react";
 import QuestionCard from "../components/QuestionCard";
-import { CircularProgress } from "@material-ui/core";
-import { useEffect, useState } from "react";
-import Question from "../../components/Question/Question";
-import "./Quiz.css";
+import ResultCom from "../components/Result";
+import Start from "../components/Start";
+import { Spin } from "antd";
 
 const Quiz = () => {
-     const [questions, setQuestions] = useState();
-  const [name, setName] = useState();
-  const [score, setScore] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [currentQuetion, setCurrentQuetion] = useState(0);
+  const [currect, setCurrect] = useState(0);
+  const [showResult, setShowResult] = useState(false);
 
-  const fetchQuestions = async (category = "", difficulty = "") => {
-    const { data } = await axios.get(
-      `https://opentdb.com/api.php?amount=10${
-        category && `&category=${category}`
-      }${difficulty && `&difficulty=${difficulty}`}&type=multiple`
-    );
-
-    setQuestions(data.results);
-  };
-
-  const [options, setOptions] = useState();
-  const [currQues, setCurrQues] = useState(0);
-
-  useEffect(() => {
-    setOptions(
-      questions &&
-        handleShuffle([
-          questions[currQues]?.correct_answer,
-          ...questions[currQues]?.incorrect_answers,
-        ])
-    );
-  }, [currQues, questions]);
-
-  console.log(questions);
-
-  const handleShuffle = (options) => {
-    return options.sort(() => Math.random() - 0.5);
+  const getQuetions = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get("https://opentdb.com/api.php?amount=10");
+      setQuestions(res.data.results);
+      setCurrect(0);
+      setLoading(false);
+      setCurrentQuetion(1);
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   return (
-    <div>
-      <QuizDetails />
-       <div className="quiz">
-      <span className="subtitle">Welcome, {name}</span>
-
-      {questions ? (
-        <>
-          <div className="quizInfo">
-            <span>{questions[currQues].category}</span>
-            <span>
-              {/* {questions[currQues].difficulty} */}
-              Score : {score}
-            </span>
-          </div>
-          <QuestionCard
-            currQues={currQues}
-            setCurrQues={setCurrQues}
-            questions={questions}
-            options={options}
-            correct={questions[currQues]?.correct_answer}
-            score={score}
-            setScore={setScore}
-            setQuestions={setQuestions}
-          />
-        </>
-      ) : (
-        <CircularProgress
-          style={{ margin: 100 }}
-          color="inherit"
-          size={150}
-          thickness={1}
-        />
-      )}
-    </div>
-      <Result />
-          <Home
-              name={name}
-              setName={setName}
-              fetchQuestions={fetchQuestions}
+    <div className="content">
+      <h1 className="heading">Quiz Application</h1>
+      <div className="form_container flex-cl">
+        <div style={{ width: "100%" }}>
+          {currentQuetion === 0 && !loading && (
+            <Start getQuetions={getQuetions} />
+          )}
+          {!showResult && currentQuetion > 0 && currentQuetion <= 10 && (
+            <QuestionCard
+              quetions={questions}
+              setCurrect={setCurrect}
+              currentQuetion={currentQuetion}
+              currect={currect}
+              setCurrentQuetion={setCurrentQuetion}
+              setShowResult={setShowResult}
             />
-          </Route>
-          <Route path="/quiz">
-            <Quiz
-              name={name}
-              questions={questions}
-              score={score}
-              setScore={setScore}
-              setQuestions={setQuestions}
+          )}
+          {showResult && (
+            <ResultCom
+              setCurrect={setCurrect}
+              setCurrentQuetion={setCurrentQuetion}
+              currect={currect}
+              setShowResult={setShowResult}
             />
-          </Route>
-          <Route path="/result">
-            <Result name={name} score={score} />
-          </Route>
+          )}
+          {loading && (
+            <div className="flex-cl">
+              <Spin size="large" />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

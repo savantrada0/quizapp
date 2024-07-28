@@ -1,31 +1,38 @@
-import { Button } from "@material-ui/core";
+import { Button, Result } from "antd";
 import { useEffect } from "react";
-import { useHistory } from "react-router";
-import "./Result.css";
+import { ResultProps } from "../types/types";
+import { SmileOutlined } from "@ant-design/icons";
 
-const Result = ({ name, score }) => {
-  const history = useHistory();
-
-  useEffect(() => {
-    if (!name) {
-      history.push("/");
-    }
-  }, [name, history]);
+const ResultCom = ({
+  currect,
+  setCurrect,
+  setCurrentQuetion,
+  setShowResult,
+}: ResultProps) => {
+  const onRestart = () => {
+    setCurrect(0);
+    setCurrentQuetion(0);
+    setShowResult(false);
+  };
 
   return (
-    <div className="result">
-      <span className="title">Final Score : {score}</span>
-      <Button
-        variant="contained"
-        color="secondary"
-        size="large"
-        style={{ alignSelf: "center", marginTop: 20 }}
-        href="/"
-      >
-        Go to homepage
-      </Button>
-    </div>
+    <Result
+      icon={<SmileOutlined />}
+      title="Quiz is complated here is result."
+      extra={
+        <div className="result">
+          <div className="result-txt">
+            <p>Total Quetions : 10</p>
+            <p>Currect Answer : {currect}</p>
+            <p>Wrong Answer : {10 - currect}</p>
+          </div>
+          <Button type="primary" onClick={() => onRestart()}>
+            Start Again
+          </Button>
+        </div>
+      }
+    />
   );
 };
 
-export default Result;
+export default ResultCom;

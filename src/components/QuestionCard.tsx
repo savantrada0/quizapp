@@ -1,93 +1,137 @@
-import { Button } from "@material-ui/core";
-import { useState } from "react";
-import { useHistory } from "react-router";
-import "./Question.css";
-import ErrorMessage from "../ErrorMessage/ErrorMessage";
+import { Button, message } from "antd";
+import { useEffect, useState } from "react";
+import { Quetion, QuetionCardProps } from "../types/types";
 
 const QuestionCard = ({
-  currQues,
-  setCurrQues,
-  questions,
-  options,
-  correct,
-  setScore,
-  score,
-  setQuestions,
-}) => {
-  const [selected, setSelected] = useState();
-  const [error, setError] = useState(false);
+  quetions,
+  setCurrect,
+  currentQuetion,
+  setCurrentQuetion,
+  currect,
+  setShowResult,
+}: QuetionCardProps) => {
+  const [complate, setComplate] = useState(false);
+  const [selected, setSelected] = useState("");
+  const [error, setError] = useState("");
+  const [options, setOptions] = useState<string[]>([]);
+  const [messageApi, contextHolder] = message.useMessage();
 
-  const history = useHistory();
+  useEffect(() => {
+    getOptions();
+  }, [currentQuetion]);
 
-  const handleSelect = (i) => {
-    if (selected === i && selected === correct) return "select";
-    else if (selected === i && selected !== correct) return "wrong";
-    else if (i === correct) return "select";
-  };
-
-  const handleCheck = (i) => {
-    setSelected(i);
-    if (i === correct) setScore(score + 1);
-    setError(false);
+  const checkAnswer = () => {
+    setComplate(true);
+    if (quetions[currentQuetion - 1].correct_answer === selected) {
+      messageApi.open({
+        type: "success",
+        content: "Currect Answer",
+      });
+      setCurrect(currect + 1);
+    } else {
+      messageApi.open({
+        type: "error",
+        content: "InCorrect Answer",
+      });
+      setError(
+        `The correct answer of this quetion is ${
+          quetions[currentQuetion - 1].correct_answer
+        }`
+      );
+    }
   };
 
   const handleNext = () => {
-    if (currQues > 8) {
-      history.push("/result");
-    } else if (selected) {
-      setCurrQues(currQues + 1);
-      setSelected();
-    } else setError("Please select an option first");
+    if (currentQuetion === 10) {
+      setShowResult(true);
+      return false;
+    } else {
+      setCurrentQuetion(currentQuetion + 1);
+      setComplate(false);
+      setError("");
+      setSelected("");
+    }
   };
 
-  const handleQuit = () => {
-    setCurrQues(0);
-    setQuestions();
+  const suffle = (array: string[]) => {
+    let i = 0;
+    let j = 0;
+    let temp = null;
+    for (i = array.length - 1; i > 0; i -= 1) {
+      j = Math.floor(Math.random() * (i + 1));
+      temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
+    }
+    return array;
+  };
+
+  const getOptions = () => {
+    const quetion = quetions[currentQuetion - 1];
+    let array = quetion.incorrect_answers.concat(quetion.correct_answer);
+    array = suffle(array);
+    setOptions(array);
   };
 
   return (
-    <div className="question">
-      <h1>Question {currQues + 1} :</h1>
-
-      <div className="singleQuestion">
-        <h2>{questions[currQues].question}</h2>
-        <div className="options">
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {options &&
-            options.map((i) => (
-              <button
-                className={`singleOption  ${selected && handleSelect(i)}`}
-                key={i}
-                onClick={() => handleCheck(i)}
-                disabled={selected}
-              >
-                {i}
-              </button>
-            ))}
+    <>
+      {contextHolder}
+      <div>
+        <div className="que-wrapper">
+          <h2 className="num">{currentQuetion}</h2>
+          <p className="question">{quetions[currentQuetion - 1]?.question}</p>
         </div>
-        <div className="controls">
+        <div className="row">
+          {options.map((item, index) => (
+            <Button
+              key={index}
+              disabled={complate}
+              onClick={() => setSelected(item)}
+              className={
+                `btn-option ${
+                  selected === item && !complate
+                    ? "selected"
+                    : complate && error.length && selected === item
+                    ? "incurrect-option"
+                    : complate && selected === item && !error.length
+                    ? "currect-option"
+                    : ""
+                }` +
+                `${
+                  complate &&
+                  item === quetions[currentQuetion - 1].correct_answer
+                    ? " currect-option"
+                    : ""
+                }`
+              }
+            >
+              {item}
+            </Button>
+          ))}
+        </div>
+        <div className="description">
+          {error && <p style={{ color: "green" }}>Description : {error}</p>}
+        </div>
+        <div className="btn-group">
           <Button
-            variant="contained"
-            color="secondary"
-            size="large"
-            style={{ width: 185 }}
-            href="/"
-            onClick={() => handleQuit()}
+            className="btn-bottom"
+            disabled={complate || !selected}
+            onClick={() => checkAnswer()}
+            type="primary"
           >
-            Quit
+            Submit
           </Button>
           <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            style={{ width: 185 }}
-            onClick={handleNext}
+            className="btn-bottom"
+            disabled={!complate || !selected}
+            onClick={() => handleNext()}
+            type="primary"
           >
-            {currQues > 20 ? "Submit" : "Next Question"}
+            Next
           </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
